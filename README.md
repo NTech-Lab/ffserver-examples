@@ -1,2 +1,2 @@
 # ffserver-examples
-FindFace Cloud &amp; Server API examples
+FindFace Cloud & Server API examples
