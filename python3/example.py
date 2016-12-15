@@ -132,6 +132,11 @@ class FacenAPI:
 
 photo1 = 'http://static.findface.pro/sample.jpg'
 photo2 = 'http://static.findface.pro/sample2.jpg'
+# if you want to upload files from local machine you could pass file objects or byte strings instead of URL strings:
+# like this:
+# photo1 = open('/path/to/sample.jpg', 'rb')
+# or
+# photo1 = open('/path/to/sample.jpg', 'rb').read()
 
 a = FacenAPI('http://HOST:PORT', 'TOKEN')
 r = a.detect(photo1)
