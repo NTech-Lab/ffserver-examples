@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from urllib import request
+import requests
 import json
 import datetime
 import dateutil.parser
@@ -32,7 +32,7 @@ class Face:
     def __init__(self, face_id, photo, timestamp, photo_hash, bbox, person_id = None, meta = None, galleries = None, cam_id = None):
         self.id = int(face_id)
         self.photo = photo
-        self.person_id = int(person_id)
+        self.person_id = None if person_id is None else int(person_id)
         self.timestamp = dateutil.parser.parse(timestamp)
         self.photo_hash = bytearray.fromhex(photo_hash)
         self.box = bbox
@@ -69,6 +69,10 @@ class encoder(json.JSONEncoder):
             return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
 
+class FacenAPIError(Exception):
+    def __init__(self, code, error):
+       self.code, self.error = code, error
+
 # some facen api requests
 class FacenAPI:
     def __init__(self, url, token):
@@ -77,14 +81,20 @@ class FacenAPI:
 
     def do_post(self, func, **args):
         params = dict()
+        files = dict()
         for k, v in args.items():
             if v is not None:
-                params[k] = v
-        req = request.Request(self.baseurl + func,
-            data = json.dumps(params, cls = encoder).encode('utf-8'),
-            headers = {'Authorization': 'Token '+ self.token, 'Content-Type': 'application/json'})
-        with request.urlopen(req) as f:
-            return json.loads(f.read().decode('utf-8'))
+                if hasattr(v, 'read') or isinstance(v, (bytes, tuple)):
+                    files[k] = v
+                else:
+                    params[k] = v
+        res = requests.post(self.baseurl + func,
+            headers = {'Authorization': 'Token '+ self.token},
+            files = files,
+            data = params)
+        if res.status_code >= 400:
+            raise FacenAPIError(res.status_code, res.json())
+        return res.json()
 
     # returns array of bboxes
     def detect(self, photo_url):
